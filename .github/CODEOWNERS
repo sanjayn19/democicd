@@ -1,0 +1,6 @@
+/.github/workflows/ @platform-team
+/scripts/ @platform-team
+/config/promotion-policy.json @platform-team @release-managers
+/dags/ @data-engineering
+/.promotion/ @platform-team
+

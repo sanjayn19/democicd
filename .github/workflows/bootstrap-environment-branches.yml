@@ -1,0 +1,42 @@
+name: Bootstrap environment branches
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type BOOTSTRAP to create missing pdev, ptest and prod branches from main
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    if: ${{ inputs.confirmation == 'BOOTSTRAP' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require promotion bot token
+        env:
+          BOT_TOKEN: ${{ secrets.PROMOTION_BOT_TOKEN }}
+        run: test -n "$BOT_TOKEN"
+
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.PROMOTION_BOT_TOKEN }}
+
+      - name: Create only missing environment branches
+        run: |
+          git fetch origin --prune
+          for branch in pdev ptest prod; do
+            if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+              echo "$branch already exists; leaving it unchanged"
+            else
+              git push origin origin/main:"refs/heads/$branch"
+            fi
+          done
+

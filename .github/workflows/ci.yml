@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, ptest, prod]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install development tools
+        run: python -m pip install --requirement requirements-dev.txt
+
+      - name: Lint Python
+        run: python -m ruff check dags scripts tests
+
+      - name: Validate DAG structure
+        run: python scripts/validate_dags.py dags
+
+      - name: Compile Python
+        run: python -m compileall -q dags scripts tests
+
+      - name: Run tests
+        run: python -m pytest
+

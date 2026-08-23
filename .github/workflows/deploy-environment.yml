@@ -1,0 +1,98 @@
+name: Deploy PTEST or PROD environment branch
+
+on:
+  push:
+    branches: [ptest, prod]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment branch to redeploy
+        type: choice
+        options: [ptest, prod]
+        required: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || github.ref_name }}
+    concurrency:
+      group: deployment-${{ github.event_name == 'workflow_dispatch' && inputs.environment || github.ref_name }}
+      cancel-in-progress: false
+    steps:
+      - name: Resolve deployment branch
+        id: target
+        env:
+          DISPATCH_ENV: ${{ inputs.environment }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "branch=$DISPATCH_ENV" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch=$REF_NAME" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out environment branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.branch }}
+          fetch-depth: 0
+
+      - name: Resolve exact deployment commit
+        id: commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate DAGs
+        run: python scripts/validate_dags.py dags
+
+      - name: Build immutable deployment bundle
+        run: >-
+          python scripts/build_bundle.py
+          --environment "${{ steps.target.outputs.branch }}"
+          --source dags
+          --output build
+          --git-sha "${{ steps.commit.outputs.sha }}"
+
+      - name: Deploy using the local example adapter
+        run: >-
+          python scripts/deploy_dags.py
+          --environment "${{ steps.target.outputs.branch }}"
+          --target build/deployed
+          --git-sha "${{ steps.commit.outputs.sha }}"
+
+      - name: Run post-deployment checks
+        run: >-
+          python scripts/post_deploy_checks.py
+          --environment "${{ steps.target.outputs.branch }}"
+          --expected-sha "${{ steps.commit.outputs.sha }}"
+          --source dags
+          --deployed-root build/deployed
+
+      - name: Upload deployment evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.target.outputs.branch }}-${{ steps.commit.outputs.sha }}
+          path: build/
+          if-no-files-found: error
+
+      - name: Finalize labels after successful deployment
+        if: ${{ github.event_name == 'push' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          python scripts/finalize_deployment.py
+          --environment "${{ steps.target.outputs.branch }}"
+          --repository "${{ github.repository }}"
+          --token "$GH_TOKEN"
+          --before-sha "${{ github.event.before }}"
+          --after-sha "${{ steps.commit.outputs.sha }}"

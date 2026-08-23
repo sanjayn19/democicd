@@ -1,0 +1,68 @@
+name: Create selective rollback PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to roll back
+        type: choice
+        options: [ptest, prod]
+        required: true
+      source_pr_number:
+        description: Original source PR number to roll back
+        type: string
+        required: true
+      dry_run:
+        description: Show the recorded promotion without creating a rollback PR
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rollback-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Require promotion bot token
+        env:
+          BOT_TOKEN: ${{ secrets.PROMOTION_BOT_TOKEN }}
+        run: test -n "$BOT_TOKEN"
+
+      - name: Check out environment branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.environment }}
+          fetch-depth: 0
+          token: ${{ secrets.PROMOTION_BOT_TOKEN }}
+
+      - name: Inspect rollback only
+        if: ${{ inputs.dry_run }}
+        env:
+          BOT_TOKEN: ${{ secrets.PROMOTION_BOT_TOKEN }}
+        run: >-
+          python scripts/create_rollback.py
+          --environment "${{ inputs.environment }}"
+          --pr-number "${{ inputs.source_pr_number }}"
+          --repository "${{ github.repository }}"
+          --token "$BOT_TOKEN"
+          --run-id "${{ github.run_id }}"
+          --dry-run
+
+      - name: Create rollback PR
+        if: ${{ !inputs.dry_run }}
+        env:
+          BOT_TOKEN: ${{ secrets.PROMOTION_BOT_TOKEN }}
+        run: >-
+          python scripts/create_rollback.py
+          --environment "${{ inputs.environment }}"
+          --pr-number "${{ inputs.source_pr_number }}"
+          --repository "${{ github.repository }}"
+          --token "$BOT_TOKEN"
+          --run-id "${{ github.run_id }}"
+

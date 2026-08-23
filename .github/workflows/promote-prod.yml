@@ -1,0 +1,70 @@
+name: Promote selected PRs to PROD
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Plan only; do not create a branch or PR
+        type: boolean
+        default: false
+      max_prs:
+        description: Maximum number of eligible source PRs in this batch
+        type: string
+        default: "20"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: promotion-prod
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Require promotion bot token
+        env:
+          BOT_TOKEN: ${{ secrets.PROMOTION_BOT_TOKEN }}
+        run: test -n "$BOT_TOKEN"
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.PROMOTION_BOT_TOKEN }}
+
+      - name: Plan PROD promotion
+        if: ${{ inputs.dry_run }}
+        env:
+          BOT_TOKEN: ${{ secrets.PROMOTION_BOT_TOKEN }}
+        run: >-
+          python scripts/promote.py
+          --environment prod
+          --repository "${{ github.repository }}"
+          --token "$BOT_TOKEN"
+          --run-id "${{ github.run_id }}"
+          --max-prs "${{ inputs.max_prs }}"
+          --dry-run
+
+      - name: Create PROD promotion PR
+        if: ${{ !inputs.dry_run }}
+        env:
+          BOT_TOKEN: ${{ secrets.PROMOTION_BOT_TOKEN }}
+        run: >-
+          python scripts/promote.py
+          --environment prod
+          --repository "${{ github.repository }}"
+          --token "$BOT_TOKEN"
+          --run-id "${{ github.run_id }}"
+          --max-prs "${{ inputs.max_prs }}"
+
+      - name: Upload promotion plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-promotion-plan-${{ github.run_id }}
+          path: build/promotion-plan.json
+          if-no-files-found: error
+

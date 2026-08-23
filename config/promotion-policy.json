@@ -1,0 +1,34 @@
+{
+  "source_branch": "main",
+  "environment_branches": {
+    "pdev": "pdev",
+    "ptest": "ptest",
+    "prod": "prod"
+  },
+  "labels": {
+    "ptest": {
+      "request": "promote:ptest",
+      "promoted": "promoted:ptest",
+      "hold": "hold:ptest",
+      "reject": "reject:ptest",
+      "promotion_pr": "promotion:ptest",
+      "rollback_pr": "rollback:ptest",
+      "rolledback": "rolledback:ptest"
+    },
+    "prod": {
+      "request": "promote:prod",
+      "promoted": "promoted:prod",
+      "hold": "hold:prod",
+      "reject": "reject:prod",
+      "promotion_pr": "promotion:prod",
+      "rollback_pr": "rollback:prod",
+      "rolledback": "rolledback:prod"
+    }
+  },
+  "prod_requires_label": "promoted:ptest",
+  "require_single_parent_source_commit": true,
+  "require_source_file_set_match": true,
+  "require_patch_id_match": true,
+  "abort_if_open_promotion_pr_exists": true,
+  "default_max_batch_size": 20
+}

@@ -1,0 +1,83 @@
+name: Sync main and deploy PDEV
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pdev-sync-and-deploy
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require promotion bot token
+        env:
+          BOT_TOKEN: ${{ secrets.PROMOTION_BOT_TOKEN }}
+        run: test -n "$BOT_TOKEN"
+
+      - name: Check out main with promotion bot identity
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.PROMOTION_BOT_TOKEN }}
+
+      - name: Fast-forward pdev to main
+        run: |
+          git fetch origin main pdev || git fetch origin main
+          if git show-ref --verify --quiet refs/remotes/origin/pdev; then
+            git merge-base --is-ancestor origin/pdev origin/main || {
+              echo "pdev diverged from main; refusing to overwrite it" >&2
+              exit 1
+            }
+          fi
+          git push origin origin/main:refs/heads/pdev
+
+  deploy:
+    needs: sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: pdev
+    concurrency:
+      group: deployment-pdev
+      cancel-in-progress: false
+    steps:
+      - name: Check out the exact main commit deployed to pdev
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate and build bundle
+        run: |
+          python scripts/validate_dags.py dags
+          python scripts/build_bundle.py --environment pdev --source dags --output build --git-sha "${{ github.sha }}"
+
+      - name: Deploy using the local example adapter
+        run: python scripts/deploy_dags.py --environment pdev --target build/deployed --git-sha "${{ github.sha }}"
+
+      - name: Run post-deployment checks
+        run: >-
+          python scripts/post_deploy_checks.py
+          --environment pdev
+          --expected-sha "${{ github.sha }}"
+          --source dags
+          --deployed-root build/deployed
+
+      - name: Upload deployment evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdev-${{ github.sha }}
+          path: build/
+          if-no-files-found: error
