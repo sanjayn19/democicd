@@ -68,7 +68,7 @@ For production, use a GitHub App installation token with least privilege:
 
 The bot should be an allowed actor for the `pdev`, `ptest`, and `prod` branch rules. Avoid a broadly scoped classic PAT.
 
-For a production repository, pin every third-party and GitHub-maintained action to a reviewed full commit SHA. The template uses readable major-version tags and enables Dependabot so the control is visible; convert those tags to approved SHAs before adoption.
+Every GitHub-maintained action in this template is pinned to a reviewed full commit SHA, with the release version recorded in an inline comment. Keep Dependabot enabled so it proposes reviewed SHA updates without making workflow execution depend on a mutable version tag.
 
 ## Deployment integration
 
