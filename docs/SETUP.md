@@ -14,7 +14,7 @@
 ### `main`
 
 - Require pull requests and two approvals as appropriate
-- Require `CI / validate`
+- Require the `validate` check from the GitHub Actions app
 - Require CODEOWNERS review for `.github/workflows/`, `scripts/`, `config/`, and `.promotion/`
 - Dismiss stale approvals
 - Require conversation resolution
@@ -30,7 +30,7 @@
 ### `ptest`
 
 - Require PRs
-- Require `CI / validate`
+- Require the `validate` check from the GitHub Actions app
 - Require release/QA approval
 - Allow only PRs carrying `promotion:ptest` by policy or reviewer process
 - Require merge commits for generated promotion/rollback PRs; do not squash the batch
@@ -39,7 +39,7 @@
 ### `prod`
 
 - Require PRs and production-owner approval
-- Require `CI / validate`
+- Require the `validate` check from the GitHub Actions app
 - Require signed commits if compatible with the bot identity
 - Allow only generated PRs carrying `promotion:prod`
 - Require merge commits for generated promotion/rollback PRs; do not squash the batch
