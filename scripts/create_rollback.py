@@ -64,7 +64,12 @@ def main() -> int:
     record = json.loads(raw)
     promotion_sha = record["promotion_sha"]
     branch = f"rollback/{args.environment}/pr-{args.pr_number}-run-{args.run_id}"
-    print(json.dumps({"environment": args.environment, "record": record, "branch": branch}, indent=2))
+    print(
+        json.dumps(
+            {"environment": args.environment, "record": record, "branch": branch},
+            indent=2,
+        )
+    )
     if args.dry_run:
         return 0
 
@@ -73,7 +78,8 @@ def main() -> int:
     if revert.returncode:
         command(["git", "revert", "--abort"], check=False)
         raise RuntimeError(
-            "Rollback conflicts with later environment changes. Use a reviewed forward fix or a manually prepared rollback PR.\n"
+            "Rollback conflicts with later environment changes. Use a reviewed forward fix or a "
+            "manually prepared rollback PR.\n"
             + revert.stderr
         )
     revert_sha = command(["git", "rev-parse", "HEAD"]).stdout.strip()
@@ -98,7 +104,8 @@ def main() -> int:
         f"Rollback source PR #{args.pr_number} from `{args.environment}`.\n\n"
         f"Reverts promotion commit `{promotion_sha}`.\n\n"
         f"Rollback-Manifest: `{manifest_path.as_posix()}`\n\n"
-        "Automation does not resolve rollback conflicts. Validate downstream DAG dependencies and already-running DAG runs before merging."
+        "Automation does not resolve rollback conflicts. Validate downstream DAG dependencies and "
+        "already-running DAG runs before merging."
     )
     github = GitHub(args.repository, args.token)
     pull = github.call(
@@ -123,4 +130,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
