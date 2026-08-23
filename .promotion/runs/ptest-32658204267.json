@@ -1,0 +1,22 @@
+{
+  "operation": "promotion",
+  "environment": "ptest",
+  "target_branch": "ptest",
+  "source_branch": "main",
+  "run_id": "32658204267",
+  "created_at": "2026-08-23T18:29:41.069146+00:00",
+  "promotions": [
+    {
+      "pr_number": 7,
+      "title": "test: add PTEST-eligible DAG",
+      "source_sha": "683af00e8e158c9fda2592e087f669551b6801f3",
+      "promotion_sha": "78a10f20d3706952c9349d1b88ffc2124b7fa5f4",
+      "merged_at": "2026-08-23T18:24:52Z",
+      "files": [
+        "dags/promotion_eligible_demo.py"
+      ],
+      "source_url": "https://github.com/sanjayn19/democicd/pull/7"
+    }
+  ],
+  "skipped": []
+}
