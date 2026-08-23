@@ -21,6 +21,8 @@
 - Block force pushes and deletion
 - Require squash as the allowed merge method
 
+For a personal, single-collaborator demo repository, set required approvals to zero and do not require CODEOWNERS review. GitHub does not allow the PR author to approve their own PR, so enable those review gates only after adding at least one independent collaborator who can review the owner’s changes.
+
 ### `pdev`
 
 - Block human pushes
