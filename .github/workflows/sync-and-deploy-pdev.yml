@@ -23,7 +23,7 @@ jobs:
         run: test -n "$BOT_TOKEN"
 
       - name: Check out main with promotion bot identity
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
@@ -50,7 +50,7 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Check out the exact main commit deployed to pdev
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
 
