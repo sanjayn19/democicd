@@ -14,12 +14,14 @@
 ### `main`
 
 - Require pull requests and two approvals as appropriate
-- Require `CI / validate`
+- Require the `validate` check from the GitHub Actions app
 - Require CODEOWNERS review for `.github/workflows/`, `scripts/`, `config/`, and `.promotion/`
 - Dismiss stale approvals
 - Require conversation resolution
 - Block force pushes and deletion
 - Require squash as the allowed merge method
+
+For a personal, single-collaborator demo repository, set required approvals to zero and do not require CODEOWNERS review. GitHub does not allow the PR author to approve their own PR, so enable those review gates only after adding at least one independent collaborator who can review the owner’s changes.
 
 ### `pdev`
 
@@ -30,7 +32,7 @@
 ### `ptest`
 
 - Require PRs
-- Require `CI / validate`
+- Require the `validate` check from the GitHub Actions app
 - Require release/QA approval
 - Allow only PRs carrying `promotion:ptest` by policy or reviewer process
 - Require merge commits for generated promotion/rollback PRs; do not squash the batch
@@ -39,7 +41,7 @@
 ### `prod`
 
 - Require PRs and production-owner approval
-- Require `CI / validate`
+- Require the `validate` check from the GitHub Actions app
 - Require signed commits if compatible with the bot identity
 - Allow only generated PRs carrying `promotion:prod`
 - Require merge commits for generated promotion/rollback PRs; do not squash the batch
@@ -68,7 +70,7 @@ For production, use a GitHub App installation token with least privilege:
 
 The bot should be an allowed actor for the `pdev`, `ptest`, and `prod` branch rules. Avoid a broadly scoped classic PAT.
 
-For a production repository, pin every third-party and GitHub-maintained action to a reviewed full commit SHA. The template uses readable major-version tags and enables Dependabot so the control is visible; convert those tags to approved SHAs before adoption.
+Every GitHub-maintained action in this template is pinned to a reviewed full commit SHA, with the release version recorded in an inline comment. Keep Dependabot enabled so it proposes reviewed SHA updates without making workflow execution depend on a mutable version tag.
 
 ## Deployment integration
 

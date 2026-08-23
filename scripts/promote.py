@@ -75,7 +75,9 @@ class GitHub:
             items.extend(batch)
             if len(batch) < 100:
                 return items
-        raise RuntimeError("Pagination exceeded 1,000 items; narrow or archive old promotion labels")
+        raise RuntimeError(
+            "Pagination exceeded 1,000 items; narrow or archive old promotion labels"
+        )
 
 
 @dataclass(frozen=True)
@@ -179,7 +181,8 @@ def ensure_no_open_promotion(github: GitHub, environment: str, promotion_label: 
     for pull in pulls:
         if promotion_label in labels(pull):
             raise RuntimeError(
-                f"Open {environment} promotion PR already exists: #{pull['number']} {pull['html_url']}"
+                f"Open {environment} promotion PR already exists: #{pull['number']} "
+                f"{pull['html_url']}"
             )
 
 
@@ -204,7 +207,9 @@ def verify_source(candidate: Candidate, source_branch: str) -> None:
     )
     if ancestry.returncode:
         raise RuntimeError(f"PR #{candidate.number} source SHA is not on {source_branch}")
-    parents = command(["git", "rev-list", "--parents", "-n", "1", candidate.source_sha]).stdout.split()
+    parents = command(
+        ["git", "rev-list", "--parents", "-n", "1", candidate.source_sha]
+    ).stdout.split()
     if len(parents) != 2:
         raise RuntimeError(
             f"PR #{candidate.number} source SHA has {len(parents) - 1} parents; "
@@ -250,7 +255,8 @@ def create_promotion(
             existing = read_record(target_branch, environment, candidate.number)
             if existing:
                 raise RuntimeError(
-                    f"PR #{candidate.number} already has a {environment} record but its labels are stale"
+                    f"PR #{candidate.number} already has a {environment} record but its labels "
+                    "are stale"
                 )
             verify_source(candidate, source_branch)
             if environment == "prod":
@@ -302,7 +308,11 @@ def create_promotion(
         for item in promotions:
             record_path = Path(f".promotion/records/{environment}/pr-{item.pr_number}.json")
             record_path.parent.mkdir(parents=True, exist_ok=True)
-            record = asdict(item) | {"environment": environment, "run_id": run_id, "created_at": created_at}
+            record = asdict(item) | {
+                "environment": environment,
+                "run_id": run_id,
+                "created_at": created_at,
+            }
             record_path.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
         command(["git", "add", ".promotion"])
         command(["git", "commit", "-m", f"Record {environment} promotion run {run_id}"])
@@ -319,7 +329,8 @@ def create_promotion(
         "| --- | --- | --- |",
     ]
     lines.extend(
-        f"| #{item.pr_number} — {item.title} | `{item.source_sha[:12]}` | `{item.promotion_sha[:12]}` |"
+        f"| #{item.pr_number} — {item.title} | `{item.source_sha[:12]}` | "
+        f"`{item.promotion_sha[:12]}` |"
         for item in promotions
     )
     lines.extend(
@@ -327,7 +338,8 @@ def create_promotion(
             "",
             f"Promotion-Manifest: `{manifest_path.as_posix()}`",
             "",
-            "Conflict resolution is intentionally disabled. If this PR conflicts or fails CI, fix the source through a new PR into `main` and rerun promotion.",
+            "Conflict resolution is intentionally disabled. If this PR conflicts or fails CI, fix "
+            "the source through a new PR into `main` and rerun promotion.",
         ]
     )
     owner = repository.split("/", 1)[0]

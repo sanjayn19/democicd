@@ -53,12 +53,22 @@ def main() -> int:
     for name, (color, description) in LABELS.items():
         encoded = urllib.parse.quote(name, safe="")
         try:
-            request(f"{base}/{encoded}", args.token, "PATCH", {"color": color, "description": description})
+            request(
+                f"{base}/{encoded}",
+                args.token,
+                "PATCH",
+                {"color": color, "description": description},
+            )
             print(f"updated {name}")
         except urllib.error.HTTPError as exc:
             if exc.code != 404:
                 raise
-            request(base, args.token, "POST", {"name": name, "color": color, "description": description})
+            request(
+                base,
+                args.token,
+                "POST",
+                {"name": name, "color": color, "description": description},
+            )
             print(f"created {name}")
     return 0
 

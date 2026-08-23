@@ -17,7 +17,6 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-
 ZERO_SHA = "0" * 40
 RUNS_DIRECTORY = Path(".promotion/runs")
 
